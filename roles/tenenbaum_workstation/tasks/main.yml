@@ -1,0 +1,21 @@
+# Runs on WKS01 and WKS02, after tenenbaum_ad has created the groups on DC01.
+
+- name: Domain groups in the local Administrators group
+  ansible.windows.win_group_membership:
+    name: Administrators
+    members: "{{ tenenbaum_local_admin_groups }}"
+    state: present
+
+- name: Automatic logon of the workstation's owner
+  community.windows.win_auto_logon:
+    username: "{{ tenenbaum_autologon_user }}"
+    password: "{{ tenenbaum_autologon_password }}"
+    state: present
+  no_log: true
+  register: tenenbaum_autologon
+  when: tenenbaum_autologon_user | length > 0
+
+- name: Reboot so the new session opens
+  ansible.windows.win_reboot:
+    reboot_timeout: 900
+  when: tenenbaum_autologon is changed

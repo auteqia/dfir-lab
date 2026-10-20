@@ -1,0 +1,11 @@
+# Workstation setup for the Tenenbaum lab (WKS01, WKS02).
+
+# Domain groups added to the local Administrators group
+tenenbaum_local_admin_groups:
+  - 'ROYAL\Helpdesk'
+
+# User logged on automatically at boot, so each workstation has its owner's
+# session open like a real office PC. Set per VM with role_vars in range.yaml;
+# empty = keep the Ludus default.
+tenenbaum_autologon_user: ""
+tenenbaum_autologon_password: ""

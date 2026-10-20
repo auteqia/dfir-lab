@@ -1,0 +1,35 @@
+# Windows 11 22H2 before build 22621.900 has a bug: process creation auditing
+# writes event 1108 (error 15003/15005) instead of 4688. Fixed by KB5020044.
+# The Ludus template win11-22h2-x64-enterprise-template is build 22621.525.
+
+- name: Download KB5020044 (pinned by checksum)
+  ansible.windows.win_get_url:
+    url: "{{ tenenbaum_kb5020044_url }}"
+    dest: '{{ tenenbaum_setup_dir }}\kb5020044.msu'
+    checksum: "{{ tenenbaum_kb5020044_sha256 }}"
+    checksum_algorithm: sha256
+
+# community.windows.win_hotfix cannot read this MSU format ("failed to get
+# metadata xml inside MSU file"), so DISM is called directly.
+# Idempotence: skip when the build revision (UBR) is already >= 900.
+- name: Install KB5020044 (fixes 4688)
+  ansible.windows.win_powershell:
+    parameters:
+      Msu: '{{ tenenbaum_setup_dir }}\kb5020044.msu'
+    script: |
+      param([string]$Msu)
+      $ErrorActionPreference = 'Stop'
+      $ubr = (Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion').UBR
+      if ($ubr -ge 900) {
+          $Ansible.Changed = $false
+          $Ansible.Result = @{ reboot_required = $false; ubr = $ubr }
+          return
+      }
+      $pkg = Add-WindowsPackage -Online -PackagePath $Msu -NoRestart
+      $Ansible.Result = @{ reboot_required = [bool]$pkg.RestartNeeded; ubr = $ubr }
+  register: tenenbaum_kb5020044
+
+- name: Reboot to finish installing KB5020044
+  ansible.windows.win_reboot:
+    reboot_timeout: 1800
+  when: tenenbaum_kb5020044.result.reboot_required | default(false)

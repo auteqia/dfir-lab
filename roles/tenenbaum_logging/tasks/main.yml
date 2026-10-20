@@ -1,0 +1,112 @@
+# Runs on every Windows VM. Order matters only for Sysmon (download -> install)
+# and for log sizes (the Sysmon log exists only once Sysmon is installed).
+
+- name: Folder for lab setup files
+  ansible.windows.win_file:
+    path: "{{ tenenbaum_setup_dir }}"
+    state: directory
+
+# --- Sysmon ----------------------------------------------------------------
+- name: Download Sysmon (pinned by checksum)
+  ansible.windows.win_get_url:
+    url: "{{ tenenbaum_sysmon_url }}"
+    dest: '{{ tenenbaum_setup_dir }}\Sysmon.zip'
+    checksum: "{{ tenenbaum_sysmon_sha256 }}"
+    checksum_algorithm: sha256
+
+- name: Unzip Sysmon
+  community.windows.win_unzip:
+    src: '{{ tenenbaum_setup_dir }}\Sysmon.zip'
+    dest: '{{ tenenbaum_setup_dir }}\Sysmon'
+    creates: '{{ tenenbaum_setup_dir }}\Sysmon\Sysmon64.exe'
+
+- name: Copy the pinned Sysmon config
+  ansible.windows.win_copy:
+    src: sysmonconfig.xml
+    dest: '{{ tenenbaum_setup_dir }}\Sysmon\sysmonconfig.xml'
+  register: tenenbaum_sysmon_config
+
+- name: Install Sysmon (first run only)
+  ansible.windows.win_command: '{{ tenenbaum_setup_dir }}\Sysmon\Sysmon64.exe -accepteula -i {{ tenenbaum_setup_dir }}\Sysmon\sysmonconfig.xml'
+  args:
+    creates: 'C:\Windows\Sysmon64.exe'
+  register: tenenbaum_sysmon_install
+
+- name: Reload the Sysmon config when the file changed (later runs)
+  ansible.windows.win_command: 'C:\Windows\Sysmon64.exe -c {{ tenenbaum_setup_dir }}\Sysmon\sysmonconfig.xml'
+  when:
+    - tenenbaum_sysmon_config is changed
+    - tenenbaum_sysmon_install is not changed
+
+# --- Windows 11 22H2 bug: no 4688 before build 22621.900 ---------------------
+- name: Fix the 4688 bug on Windows 11 22H2
+  ansible.builtin.include_tasks: fix_4688_win11_22h2.yml
+  when: ansible_facts['distribution_version'] is match('10\.0\.22621')
+
+# --- Advanced audit policy ---------------------------------------------------
+- name: Subcategory settings win over legacy category settings (GPO on the DC)
+  ansible.windows.win_regedit:
+    path: HKLM:\SYSTEM\CurrentControlSet\Control\Lsa
+    name: SCENoApplyLegacyAuditPolicy
+    data: 1
+    type: dword
+
+- name: Enable advanced audit subcategories
+  community.windows.win_audit_policy_system:
+    subcategory: "{{ item }}"
+    audit_type: success, failure
+  loop: "{{ tenenbaum_audit_subcategories }}"
+
+- name: Include the command line in 4688
+  ansible.windows.win_regedit:
+    path: HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System\Audit
+    name: ProcessCreationIncludeCmdLine_Enabled
+    data: 1
+    type: dword
+
+# --- PowerShell logging ---------------------------------------------------
+- name: Script block logging (4104)
+  ansible.windows.win_regedit:
+    path: HKLM:\SOFTWARE\Policies\Microsoft\Windows\PowerShell\ScriptBlockLogging
+    name: EnableScriptBlockLogging
+    data: 1
+    type: dword
+
+- name: Module logging (4103)
+  ansible.windows.win_regedit:
+    path: HKLM:\SOFTWARE\Policies\Microsoft\Windows\PowerShell\ModuleLogging
+    name: EnableModuleLogging
+    data: 1
+    type: dword
+
+- name: Module logging for all modules
+  ansible.windows.win_regedit:
+    path: HKLM:\SOFTWARE\Policies\Microsoft\Windows\PowerShell\ModuleLogging\ModuleNames
+    name: "*"
+    data: "*"
+    type: string
+
+# --- Event logs: enabled + bigger -------------------------------------------
+- name: Enable event logs and set their max size
+  ansible.windows.win_powershell:
+    parameters:
+      LogName: "{{ item.key }}"
+      MaxBytes: "{{ item.value }}"
+    script: |
+      param([string]$LogName, [long]$MaxBytes)
+      $ErrorActionPreference = 'Stop'
+      $log = Get-WinEvent -ListLog $LogName
+      if ($log.MaximumSizeInBytes -eq $MaxBytes -and $log.IsEnabled) {
+          $Ansible.Changed = $false
+          return
+      }
+      $log.MaximumSizeInBytes = $MaxBytes
+      # Classic logs (Security, System...) are always enabled: setting IsEnabled
+      # on them makes SaveChanges fail with "The parameter is incorrect".
+      if (-not $log.IsEnabled) { $log.IsEnabled = $true }
+      $log.SaveChanges()
+      $now = (Get-WinEvent -ListLog $LogName).MaximumSizeInBytes
+      if ($now -ne $MaxBytes) { throw "$LogName max size is $now, expected $MaxBytes" }
+  loop: "{{ tenenbaum_log_sizes | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"

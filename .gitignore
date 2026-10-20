@@ -1,0 +1,22 @@
+# Evidence: only the manifest is committed, data is published elsewhere
+evidence/*
+!evidence/MANIFEST.md
+
+# Secrets
+*.conf
+.env
+.ludus-env
+*.key
+memo
+
+# Big forensic files
+*.dmp
+*.raw
+*.elf
+*.vmem
+*.E01
+*.7z
+*.zip
+
+# Personal notes (Obsidian export), not part of the published lab
+memo

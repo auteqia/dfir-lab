@@ -1,0 +1,95 @@
+# The story lives here: who exists in the domain and why 
+# Lab-only credentials, intentionally public. Never reuse them anywhere real.
+
+tenenbaum_domain_fqdn: "royal.tenenbaums"
+
+# Top-level OU for the "company", with one sub-OU per kind of object
+tenenbaum_ou_name: "Tenenbaum"
+tenenbaum_sub_ous:
+  - "Users"
+  - "Groups"
+  - "ServiceAccounts"
+
+tenenbaum_groups:
+  - name: "Helpdesk"
+    desc: "Household staff – local admins on workstations"
+  - name: "Finance"
+    desc: "Accounting and money matters"
+  - name: "SQL-Admins"
+    desc: "Owners of the SQL service"
+
+tenenbaum_users:
+  # --- Accounts that drive the attack story --------------------------------
+  - name: "henry.sherman"
+    first: "Henry"
+    last: "Sherman"
+    password: "Accounting#1965"
+    desc: "Accountant – patient zero, opens the lure on WKS01"
+    ou: "Users"
+    groups: ["Finance"]
+  - name: "pagoda"
+    first: "Pagoda"
+    last: ""
+    password: "Stabbed!Royal1"
+    desc: "Royal's loyal servant – Helpdesk, local admin on WKS01/WKS02"
+    ou: "Users"
+    groups: ["Helpdesk"]
+  - name: "royal.tenenbaum"
+    first: "Royal"
+    last: "Tenenbaum"
+    password: "Lindbergh!Palace375"
+    desc: "The patriarch – Domain Admin, session left open on WKS02"
+    ou: "Users"
+    groups: ["Domain Admins"]
+  - name: "svc_lindbergh"
+    first: ""
+    last: ""
+    password: "Hotel2001!"
+    desc: "SQL service account (Kerberoastable SPN)"
+    ou: "ServiceAccounts"
+    groups: ["SQL-Admins"]
+    spn: ["MSSQLSvc/DB01.royal.tenenbaums:1433"]
+
+  # --- Background cast--------
+  - name: "etheline.tenenbaum"
+    first: "Etheline"
+    last: "Tenenbaum"
+    password: "Archaeology!1"
+    desc: "Head of the household"
+    ou: "Users"
+    groups: []
+  - name: "chas.tenenbaum"
+    first: "Chas"
+    last: "Tenenbaum"
+    password: "FireDrill!Dalmatian2"
+    desc: "Finance genius, safety obsessed"
+    ou: "Users"
+    groups: ["Finance"]
+  - name: "margot.tenenbaum"
+    first: "Margot"
+    last: "Tenenbaum"
+    password: "SecretSmoker!12"
+    desc: "Playwright"
+    ou: "Users"
+    groups: []
+  - name: "richie.tenenbaum"
+    first: "Richie"
+    last: "Tenenbaum"
+    password: "TheBaumer!1972"
+    desc: "Former tennis champion"
+    ou: "Users"
+    groups: []
+  - name: "eli.cash"
+    first: "Eli"
+    last: "Cash"
+    password: "OldCuster!Novel"
+    desc: "Neighbour and writer – contractor account"
+    ou: "Users"
+    groups: []
+  - name: "raleigh.stclair"
+    first: "Raleigh"
+    last: "St. Clair"
+    password: "Dudley!Neuro9"
+    desc: "Neurologist, Margot's husband"
+    ou: "Users"
+    groups: []

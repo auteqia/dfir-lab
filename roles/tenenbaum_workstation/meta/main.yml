@@ -1,0 +1,9 @@
+galaxy_info:
+  role_name: tenenbaum_workstation
+  author: auteqia
+  description: Tenenbaum DFIR lab – workstation setup (local admin group, user session at boot)
+  license: MIT
+  min_ansible_version: "2.15"
+  platforms:
+    - name: Windows
+dependencies: []

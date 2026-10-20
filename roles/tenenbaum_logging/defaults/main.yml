@@ -1,0 +1,56 @@
+# Telemetry applied to every Windows VM (DC01, WKS01, WKS02).
+# Everything is pinned so two deploys produce the same logging.
+
+tenenbaum_setup_dir: 'C:\LabSetup'      # lab noise, documented in scenario/LAB-NOISE.md
+
+# --- Sysmon ----------------------------------------------------------------
+# This URL always serves the LATEST Sysmon. The checksum makes the deploy fail
+# loudly when Microsoft publishes a new version: re-validate, then update the hash.
+# Pinned 2026-10-20: Sysmon 15.x (schema 4.91 compatible).
+tenenbaum_sysmon_url: "https://download.sysinternals.com/files/Sysmon.zip"
+tenenbaum_sysmon_sha256: "00ecf1b46aec99299d3ae0bca79dc621458bd014b20b509d7c5c8e8c8611aa54"
+
+# files/sysmonconfig.xml = sysmon-modular release "configs-082cba578667" (2026-09-18),
+# asset sysmonconfig.xml, sha256 f115aac5770dae468e5cfb48c58a8b6e37588208a31f1b746812c534577a244b
+# https://github.com/olafhartong/sysmon-modular/releases/tag/configs-082cba578667
+
+# --- KB5020044: fixes missing 4688 on Windows 11 22H2 (build < 22621.900) ----
+# Microsoft Update Catalog, "2022-11 Cumulative Update Preview for Windows 11
+# Version 22H2 for x64-based Systems". The SHA1 in the file name is Microsoft's.
+tenenbaum_kb5020044_url: "https://catalog.s.download.windowsupdate.com/d/msdownload/update/software/updt/2022/11/windows11.0-kb5020044-x64_cd9c8997a71225ce3591cda7dd8c3efc06cfc594.msu"
+tenenbaum_kb5020044_sha256: "1aac229fbf04775e2e677847356a0188518f6d6d315554faa8cd22e72bf110de"
+
+# --- Advanced audit policy ---------------------------------------------------
+# Comment = the Security event IDs each subcategory unlocks
+tenenbaum_audit_subcategories:
+  - "Process Creation"                     # 4688
+  - "Process Termination"                  # 4689 (process lifetime in timelines)
+  - "Logon"                                # 4624 / 4625
+  - "Logoff"                               # 4634 / 4647 (session duration)
+  - "Special Logon"                        # 4672 (admin logon)
+  - "Other Logon/Logoff Events"            # 4778 / 4779 (RDP reconnect / disconnect)
+  - "Credential Validation"                # 4776 (NTLM, on the DC)
+  - "Kerberos Authentication Service"      # 4768 (TGT, on the DC)
+  - "Kerberos Service Ticket Operations"   # 4769 (service ticket, on the DC)
+  - "Security System Extension"            # 4697 (service installed)
+  - "Other Object Access Events"           # 4698-4702 (scheduled tasks)
+  - "File Share"                           # 5140 (ADMIN$, C$, IPC$)
+  - "Detailed File Share"                  # 5145 (file accessed on a share)
+  - "User Account Management"              # 4720, 4724, 4738...
+  - "Security Group Management"            # 4728, 4732, 4756...
+  - "Audit Policy Change"                  # 4719
+
+# --- Event log sizes (bytes, must be a multiple of 64 KB) ------------------
+tenenbaum_log_sizes:
+  "Security": 1073741824                                                  # 1 GB
+  "System": 268435456                                                     # 256 MB
+  "Windows PowerShell": 268435456
+  "Microsoft-Windows-PowerShell/Operational": 536870912                   # 512 MB
+  "Microsoft-Windows-Sysmon/Operational": 1073741824
+  "Microsoft-Windows-WMI-Activity/Operational": 134217728                 # 128 MB
+  "Microsoft-Windows-TaskScheduler/Operational": 134217728
+  "Microsoft-Windows-Bits-Client/Operational": 134217728
+  "Microsoft-Windows-WinRM/Operational": 134217728
+  "Microsoft-Windows-Windows Defender/Operational": 134217728
+  "Microsoft-Windows-TerminalServices-LocalSessionManager/Operational": 134217728
+  "Microsoft-Windows-TerminalServices-RemoteConnectionManager/Operational": 134217728

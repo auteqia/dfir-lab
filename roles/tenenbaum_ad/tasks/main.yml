@@ -1,0 +1,54 @@
+# Runs on the domain controller (DC01) only.
+# Order matters: OUs -> groups -> users (a user can only join a group that exists).
+
+- name: Build the domain DN from the FQDN (royal.tenenbaums -> DC=royal,DC=tenenbaums)
+  ansible.builtin.set_fact:
+    tenenbaum_domain_dn: "DC={{ tenenbaum_domain_fqdn.split('.') | join(',DC=') }}"
+
+- name: Create the top-level OU
+  microsoft.ad.ou:
+    name: "{{ tenenbaum_ou_name }}"
+    path: "{{ tenenbaum_domain_dn }}"
+    state: present
+
+- name: Create the sub-OUs
+  microsoft.ad.ou:
+    name: "{{ item }}"
+    path: "OU={{ tenenbaum_ou_name }},{{ tenenbaum_domain_dn }}"
+    state: present
+  loop: "{{ tenenbaum_sub_ous }}"
+
+- name: Create the groups
+  microsoft.ad.group:
+    name: "{{ item.name }}"
+    description: "{{ item.desc }}"
+    scope: global
+    category: security
+    path: "OU=Groups,OU={{ tenenbaum_ou_name }},{{ tenenbaum_domain_dn }}"
+    state: present
+  loop: "{{ tenenbaum_groups }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Create the users
+  microsoft.ad.user:
+    name: "{{ item.name }}"
+    sam_account_name: "{{ item.name }}"
+    upn: "{{ item.name }}@{{ tenenbaum_domain_fqdn }}"
+    firstname: "{{ item.first | default(omit, true) }}"
+    surname: "{{ item.last | default(omit, true) }}"
+    display_name: "{{ ((item.first | default('')) ~ ' ' ~ (item.last | default(''))) | trim | default(item.name, true) }}"
+    description: "{{ item.desc }}"
+    password: "{{ item.password }}"
+    update_password: on_create        # set once; a rerun never resets the password
+    password_never_expires: true
+    enabled: true
+    path: "OU={{ item.ou }},OU={{ tenenbaum_ou_name }},{{ tenenbaum_domain_dn }}"
+    groups:
+      add: "{{ item.groups }}"
+    spn:
+      add: "{{ item.spn | default([]) }}"
+    state: present
+  loop: "{{ tenenbaum_users }}"
+  loop_control:
+    label: "{{ item.name }}"          # print only the name, never the password

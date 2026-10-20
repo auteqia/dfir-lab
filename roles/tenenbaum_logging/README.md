@@ -1,0 +1,1 @@
+ajoute la politque de logging nécéssaire pour l'investig
