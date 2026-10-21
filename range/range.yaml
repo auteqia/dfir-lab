@@ -50,6 +50,7 @@ ludus:
       block_internet: true
     roles:
       - tenenbaum_logging
+      - tenenbaum_tooling
       - name: tenenbaum_workstation
         depends_on:
           - { vm_name: "auteqia-DC01", role: tenenbaum_ad }   # Helpdesk group must exist first
@@ -73,6 +74,7 @@ ludus:
       block_internet: true
     roles:
       - tenenbaum_logging
+      - tenenbaum_tooling
       - name: tenenbaum_workstation
         depends_on:
           - { vm_name: "auteqia-DC01", role: tenenbaum_ad }

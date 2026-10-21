@@ -1,0 +1,25 @@
+# Runs on WKS01 and WKS02, while internet is still available (before testing).
+
+- name: Tools folder
+  ansible.windows.win_file:
+    path: "{{ tenenbaum_tools_dir }}"
+    state: directory
+
+- name: Download the Sysinternals tools (pinned by checksum)
+  ansible.windows.win_get_url:
+    url: "{{ item.url }}"
+    dest: '{{ tenenbaum_tools_dir }}\{{ item.name }}.zip'
+    checksum: "{{ item.sha256 }}"
+    checksum_algorithm: sha256
+  loop: "{{ tenenbaum_sysinternals }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Extract the Sysinternals tools
+  community.windows.win_unzip:
+    src: '{{ tenenbaum_tools_dir }}\{{ item.name }}.zip'
+    dest: "{{ tenenbaum_tools_dir }}"
+    creates: '{{ tenenbaum_tools_dir }}\{{ item.creates }}'
+  loop: "{{ tenenbaum_sysinternals }}"
+  loop_control:
+    label: "{{ item.name }}"

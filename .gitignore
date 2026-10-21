@@ -9,6 +9,10 @@ evidence/*
 *.key
 memo
 
+# exe
+*.exe
+
+
 # Big forensic files
 *.dmp
 *.raw

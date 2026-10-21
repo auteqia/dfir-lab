@@ -1,0 +1,29 @@
+# Minimal tooling pre-staged on the workstations BEFORE `ludus testing start`
+# cuts internet. Kept deliberately small: during the run the attacker brings
+# its own tools (Sliver implant, Impacket from Kali, etc.) over the C2 channel —
+# those dropped files are wanted artifacts, so they are NOT pre-installed here.
+#
+# What stays here are tools that are useful as pre-existing, offline binaries:
+#   - PsExec   : the "clean" Sysinternals lateral-movement baseline (PSEXESVC)
+#   - sigcheck : the defender-side code-signing hunt (scenario P5)
+#   - sdelete  : secure-wipe anti-forensics (scenario P4.3)
+#
+# These Sysinternals URLs always serve the latest build; the checksum makes the
+# deploy fail loudly if Microsoft ships a new version (re-validate, update hash).
+# Pinned 2026-10-21.
+
+tenenbaum_tools_dir: 'C:\Tools'
+
+tenenbaum_sysinternals:
+  - name: PSTools
+    url: "https://download.sysinternals.com/files/PSTools.zip"
+    sha256: "c26c6ba44997e650a733df257c8feb83898d3faef2d2e391869d107e40863553"
+    creates: PsExec64.exe
+  - name: Sigcheck
+    url: "https://download.sysinternals.com/files/Sigcheck.zip"
+    sha256: "8756099c1ce3d3f450245c0d4b39aeb5b29309f56bf77f8c18f1469c418abf12"
+    creates: sigcheck64.exe
+  - name: SDelete
+    url: "https://download.sysinternals.com/files/SDelete.zip"
+    sha256: "c6b2518d217c8619f11543d59ed014d57c0afacafef453af56db9daf287edede"
+    creates: sdelete64.exe
