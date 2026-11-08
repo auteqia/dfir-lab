@@ -18,6 +18,8 @@ ludus:
     cpus: 4
     windows:
       sysprep: false
+      gpos:
+        - disable_defender    # Ludus native GPO: turns Defender off domain-wide (lab noise, see LAB-NOISE.md)
     domain:
       fqdn: royal.tenenbaums
       role: primary-dc
@@ -90,6 +92,11 @@ ludus:
     ram_gb: 8
     cpus: 4
     linux: true
+    # The attacker's fake "supplier" site resolves to Kali so the lure download
+    # carries a real hostname → Mark-of-the-Web / Zone.Identifier + Chrome history + Sysmon 22 DNS.
+    dns_rewrites:
+      - "lindbergh-supplies.com"
+      - "*.lindbergh-supplies.com"
     testing:
       snapshot: false
       block_internet: false

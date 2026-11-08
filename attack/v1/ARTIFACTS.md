@@ -33,7 +33,7 @@ Annexes: A. timing traps · B. known lab noise
 | Type | Meaning | Action that produces it | Phase | Host | Dry run | Found |
 |---|---|---|---|---|---|---|
 | 2 | Interactive | Autologon of Henry (WKS01) and Royal (WKS02); `psexec -u` (also creates a type 2 on the target) | R, P8 | WKS01, WKS02 | ☐ | ☐ |
-| 3 | Network | PsExec, WMIC, WinRM, SMB share access, pass-the-hash | P8 | destinations | ☐ | ☐ |
+| 3 | Network | PsExec, WMIC, WinRM, SMB share access, pass-the-hash | P8 | destinations | ☑ | ☐ |
 | 4 | Batch | Scheduled task running as a user with stored password | P6 | WKS01 | ☐ | ☐ |
 | 5 | Service | Persistence service starts at boot | P6, R | WKS01 | ☐ | ☐ |
 | 7 | Unlock | Henry locks (Win+L) and unlocks his session | U | WKS01 | ☐ | ☐ |
@@ -50,11 +50,11 @@ Read together with **4648** (explicit credentials, on the **source**) · **4672*
 |---|---|---|---|---|---|---|---|
 | 4768 / 4769 / 4771 / 4776 (TGT / service ticket / pre-auth failed / NTLM) | Security | Domain logons, Kerberoasting, PtH | P7, P8 | DC01 | LOG | ☐ | ☐ |
 | Kerberoasting `svc_lindbergh` | Security 4769 with encryption type `0x17` (RC4) for `MSSQLSvc/DB01…` | Service ticket request for the SPN | P7 | DC01 | LOG | ☐ | ☐ |
-| Pass-the-hash | Source: 4624 type 9 (`seclogo`) · destination: 4624 type 3 NTLM · DC: 4776 | Reuse of a stolen NTLM hash | P7 | src, dest, DC01 | LOG | ☐ | ☐ |
+| Pass-the-hash | Source: 4624 type 9 (`seclogo`) · destination: 4624 type 3 NTLM · DC: 4776 | Reuse of a stolen NTLM hash | P7 | src, dest, DC01 | LOG | ☑ | ☐ |
 | Password spraying | 4625 / 4771 burst | A few accounts, one password | P7 | DC01 | LOG | ☐ | ☐ |
 | LSASS dump (`comsvcs.dll MiniDump`) | Sysmon 10 (`TargetImage=lsass.exe`, `GrantedAccess`), 4688 command line, the `.dmp` in $MFT / USN | Credential dumping | P7 | WKS01, WKS02 | LOG + ORC | ☐ | ☐ |
 | Royal's credentials taken on WKS02 | Same on WKS02 (autologon session = Royal in LSASS) | Credential dumping | P7 | WKS02 | LOG + MEM | ☐ | ☐ |
-| 4720 / 4728 / 4732 (account created / added to group) | Security | Backdoor account created as Royal | P9 | DC01 | LOG | ☐ | ☐ |
+| 4720 / 4728 / 4732 (account created / added to group) | Security | Backdoor account created as Royal | P9 | DC01 | LOG | ☑ | ☐ |
 
 ---
 
@@ -62,7 +62,7 @@ Read together with **4648** (explicit credentials, on the **source**) · **4672*
 
 | Artifact | Where | Produced by | Phase | Host | Collect | Dry run | Found |
 |---|---|---|---|---|---|---|---|
-| **4688 / 4689** (process create / exit, with command line) | Security | Every execution | all | all | LOG | ☐ | ☐ |
+| **4688 / 4689** (process create / exit, with command line) | Security | Every execution | all | all | LOG | ☑ | ☐ |
 | **Sysmon** 1, 3, 7, 8, 10, 11, 13, 15, 17/18, 19/20/21, 22, 23/26 | Sysmon/Operational | All phases (process, network, image load, remote thread, LSASS access, files, registry, ADS, pipes, WMI, DNS, deletes) | all | all | LOG | ☐ | ☐ |
 | **Prefetch** | `C:\Windows\Prefetch\*.pf` | Every binary run (stager, LOLBins, `PSEXEC`, `PSEXESVC`, `WMIPRVSE`, `WSMPROVHOST`, `SCRCONS`, `MOFCOMP`, `SDELETE`) | all | WKS01, WKS02 (**disabled by default on servers**: none on DC01) | ORC | ☐ | ☐ |
 | **Amcache** | `C:\Windows\appcompat\Programs\Amcache.hve` (`InventoryApplicationFile`: path + SHA1) | Every new executable dropped (stager, renamed tool, side-loaded EXE/DLL) | P1, P6, P8 | all | ORC | ☐ | ☐ |
@@ -115,7 +115,7 @@ Read together with **4648** (explicit credentials, on the **source**) · **4672*
 |---|---|---|---|---|---|---|---|
 | **SRUM – network data usage** | `SRUDB.dat` (bytes sent / received per app) | Beacon traffic, exfiltration | P2, P9 | WKS01, DC01 | ORC | ☐ | ☐ |
 | **SRUM – network connectivity** | `SRUDB.dat` (interfaces, connection durations) | Normal activity | — | all | ORC | ☐ | ☐ |
-| **Sysmon 3 / 22** (connections / DNS) | Sysmon/Operational | LOLBin reaching Kali, beacon, DNS lookups | P1, P2 | WKS01 | LOG | ☐ | ☐ |
+| **Sysmon 3 / 22** (connections / DNS) | Sysmon/Operational | LOLBin reaching Kali, beacon, DNS lookups | P1, P2 | WKS01 | LOG | ☑ | ☐ |
 | **RDP client traces** | `NTUSER.DAT\Software\Microsoft\Terminal Server Client\{Default, Servers\<host>\UsernameHint}`, `Documents\Default.rdp` | `mstsc` to DC01 (RDP hop 2) | P8 | WKS02 | ORC | ☐ | ☐ |
 | **RDP bitmap cache** | `%LOCALAPPDATA%\Microsoft\Terminal Server Client\Cache\{bcache24.bmc, Cache0000.bin}` | Screen tiles of the DC01 session (bmc-tools) | P8 | WKS02 | ORC | ☐ | ☐ |
 | **Network connections in RAM** | `windows.netscan` | Beacon, remote sessions | P2, P8 | all | MEM | ☐ | ☐ |
@@ -127,17 +127,17 @@ Read together with **4648** (explicit credentials, on the **source**) · **4672*
 
 | Mechanism | Where | Fires on | Collect | Dry run | Found |
 |---|---|---|---|---|---|
-| Run key | `NTUSER.DAT\...\CurrentVersion\Run` (+ key LastWrite) | Henry's logon | ORC | ☐ | ☐ |
-| Winlogon Userinit | `SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Userinit` | Any logon | ORC | ☐ | ☐ |
-| Startup folder | `%APPDATA%\...\Start Menu\Programs\Startup\*.lnk` | Henry's logon | ORC | ☐ | ☐ |
-| Service | `SYSTEM\CurrentControlSet\Services\<name>` + System 7045 / Security 4697 | Boot | ORC + LOG | ☐ | ☐ |
-| Scheduled task | `C:\Windows\System32\Tasks\<name>` + `SOFTWARE\...\Schedule\TaskCache\{Tree,Tasks}` + Security 4698/4699/4702 | Trigger | ORC + LOG | ☐ | ☐ |
-| Scheduled task events | TaskScheduler/Operational 106 / 140 / 141 / 200 / 201 | Registration, runs | LOG | ☐ | ☐ |
+| Run key | `NTUSER.DAT\...\CurrentVersion\Run` (+ key LastWrite) | Henry's logon | ORC | ☑ | ☐ |
+| Winlogon Userinit | `SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Userinit` | Any logon | ORC | ☑ | ☐ |
+| Startup folder | `%APPDATA%\...\Start Menu\Programs\Startup\*.lnk` | Henry's logon | ORC | ☑ | ☐ |
+| Service | `SYSTEM\CurrentControlSet\Services\<name>` + System 7045 / Security 4697 | Boot | ORC + LOG | ☑ | ☐ |
+| Scheduled task | `C:\Windows\System32\Tasks\<name>` + `SOFTWARE\...\Schedule\TaskCache\{Tree,Tasks}` + Security 4698/4699/4702 | Trigger | ORC + LOG | ☑ | ☐ |
+| Scheduled task events | TaskScheduler/Operational 106 / 140 / 141 / 200 / 201 | Registration, runs | LOG | ☑ | ☐ |
 | DLL side-loading | Signed EXE + DLL in `C:\ProgramData\<vendor>\`; Sysmon 7 `Signed=false` | Launch of the EXE | ORC + LOG | ☐ | ☐ |
 | Unquoted service path | `ImagePath` without quotes + `C:\Program.exe` | Service start | ORC | ☐ | ☐ |
-| WMI subscription | `C:\Windows\System32\wbem\Repository\OBJECTS.DATA` + WMI-Activity **5861** + Sysmon 19/20/21 | Boot (+4 min) | ORC + LOG | ☐ | ☐ |
+| WMI subscription | `C:\Windows\System32\wbem\Repository\OBJECTS.DATA` + WMI-Activity **5861** + Sysmon 19/20/21 | Boot (+4 min) | ORC + LOG | ☑ | ☐ |
 | MOF autorecover | `SOFTWARE\Microsoft\Wbem\CIMOM\Autorecover MOFs` (path survives deletion of the `.mof`) | Repository rebuild | ORC | ☐ | ☐ |
-| BITS job | `C:\ProgramData\Microsoft\Network\Downloader\qmgr.db` + Bits-Client 3 / **59** (URL) / 60 / 4 | Job completion | ORC + LOG | ☐ | ☐ |
+| BITS job | `C:\ProgramData\Microsoft\Network\Downloader\qmgr.db` + Bits-Client 3 / **59** (URL) / 60 / 4 | Job completion | ORC + LOG | ☑ | ☐ |
 | **Autoruns stacking** | `autorunsc -a * -c -h -s -t '*'` on all hosts, compared to the baseline | — | LIVE | ☐ | ☐ |
 
 > [!important] A persistence mechanism only leaves **execution** artifacts if it fires: plan at least one reboot (`R`) and one new logon between P6 and the collection.
@@ -150,7 +150,7 @@ Read together with **4648** (explicit credentials, on the **source**) · **4672*
 |---|---|---|---|---|
 | Clear Security / System logs | Security **1102**, System **104**, and **the gap** before them | LOG | ☐ | ☐ |
 | Audit policy change | Security **4719** | LOG | ☐ | ☐ |
-| Defender detection before the bypass | Defender **1116 / 1117**, quarantine folder | LOG + ORC | ☐ | ☐ |
+| Defender detection before the bypass | Defender **1116 / 1117**, quarantine folder | LOG + ORC | ☑ | ☐ |
 | Defender real-time off + exclusion | Defender **5001 / 5007**, `...\Windows Defender\Exclusions\Paths`, `MPLog-*.log` in `C:\ProgramData\Microsoft\Windows Defender\Support\` | LOG + ORC | ☐ | ☐ |
 | PowerShell v2 downgrade | Windows PowerShell 400 `EngineVersion=2.0` | LOG | ☐ | ☐ |
 | `certutil -urlcache * delete` | Command line (4688 / Sysmon 1); `CryptnetUrlCache\{Content,MetaData}` before/after | LOG + ORC | ☐ | ☐ |
@@ -173,13 +173,13 @@ Tools run from Kali (Impacket, `xfreerdp`) go **through the beacon's SOCKS proxy
 | Impacket `psexec.py` | Nothing on Windows (runs on Kali) | Random 4-letter service, random `.exe` in `ADMIN$`, `RemCom_*` pipes | kali via WKS01 (SOCKS) → WKS02 | ☐ | ☐ |
 | Impacket `smbexec.py` | — | Service `BTOBTO` per command, `%COMSPEC% … __output` | kali via WKS01 (SOCKS) → WKS02 | ☐ | ☐ |
 | WMIC `/node` | 4648, Prefetch `WMIC` | `WmiPrvSE.exe` → child, WMI-Activity 5857, Prefetch `WMIPRVSE` | WKS02 → DC01 | ☐ | ☐ |
-| PowerShell Remoting | WinRM **6** (contains the destination), 4104, `ConsoleHost_history.txt` | `wsmprovhost.exe`, WinRM **91 / 168**, 4103/4104, Prefetch `WSMPROVHOST` | WKS02 → DC01 | ☐ | ☐ |
+| PowerShell Remoting | WinRM **6** (contains the destination), 4104, `ConsoleHost_history.txt` | `wsmprovhost.exe`, WinRM **91 / 168**, 4103/4104, Prefetch `WSMPROVHOST` | WKS02 → DC01 | ☑ | ☐ |
 | RDP hop 1 (`xfreerdp` on Kali through the SOCKS proxy) | **None on WKS01**: no `mstsc`, no bitmap cache — only the proxied connection (Sysmon 3 from the beacon process to WKS02:3389) | Source IP = WKS01. Royal's console session taken over: 4624 t10, **4778 reconnect**, LSM 25, RCM 1149 | WKS01 (proxy) → WKS02 | ☐ | ☐ |
 | RDP hop 2 (`mstsc` inside the hop-1 session) | `mstsc` Jump List, `Terminal Server Client` keys, **bitmap cache**, RDPClient **1024 / 1102** | 4624 t10, 4778/4779, LSM **21/22/24/25**, RCM **1149**, Royal's ShellBags / RunMRU | WKS02 → DC01 | ☐ | ☐ |
 | Remote service (`sc \\host create`) | 4648 | 7045 / 4697 without `PSEXESVC` | WKS01 → WKS02 | ☐ | ☐ |
 | Remote scheduled task (`schtasks /s`) | 4648 | 4698, TaskScheduler 106/200, `Tasks\` file | WKS02 → DC01 | ☐ | ☐ |
-| Share access | — | Security **5140 / 5145** (`ADMIN$`, `C$`, `IPC$`, exfil share) | all destinations | ☐ | ☐ |
-| Service events | — | System **7045 / 7036 / 7040**, Security 4697 (PsExec, Impacket, remote service) | all destinations | ☐ | ☐ |
+| Share access | — | Security **5140 / 5145** (`ADMIN$`, `C$`, `IPC$`, exfil share) | all destinations | ☑ | ☐ |
+| Service events | — | System **7045 / 7036 / 7040**, Security 4697 (PsExec, Impacket, remote service) | all destinations | ☑ | ☐ |
 
 > [!tip] The comparison is the lesson: stack all 7045 and all 4624 type 3 + 4648 pairs across the three hosts.
 

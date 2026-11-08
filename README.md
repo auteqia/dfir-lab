@@ -3,6 +3,13 @@
 note pour moi même pendant que je construit ce bazar
 
 
+
+Pas d'EDR pour les tests et recherche - pas l'objet du lab.
+
+Ni de PPL parce que ça me pose problème pour l'évent id 10 Sysmon pour LSASS
+
+
+
 # Comment se servir du repo ?
 
 ## 1) Tout refaire

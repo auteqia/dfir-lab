@@ -93,3 +93,15 @@ tenenbaum_users:
     desc: "Neurologist, Margot's husband"
     ou: "Users"
     groups: []
+
+# --- Scenario: credentials left in a file (ATT&CK T1552.001) -----------------
+# The Helpdesk left a drive-mapping script with Pagoda's password on the IT
+# share. Any domain user can read it: this is how the attacker gets from
+# Henry (no admin anywhere) to Pagoda (local admin on the workstations).
+tenenbaum_it_share_name: "IT"
+tenenbaum_it_share_path: 'C:\Shares\IT'
+tenenbaum_leaked_creds_user: "pagoda"
+tenenbaum_leaked_script: 'scripts\map_drives.bat'
+
+# --- Scenario: the trophy (exfiltration target, ATT&CK T1020/T1567) ----------
+tenenbaum_trophy_path: 'C:\Trophy\veryimportant.txt'

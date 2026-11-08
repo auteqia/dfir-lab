@@ -52,3 +52,43 @@
   loop: "{{ tenenbaum_users }}"
   loop_control:
     label: "{{ item.name }}"          # print only the name, never the password
+
+# --- Scenario: IT share with a script holding Pagoda's password --------------
+- name: IT share folder
+  ansible.windows.win_file:
+    path: '{{ tenenbaum_it_share_path }}\scripts'
+    state: directory
+
+- name: Helpdesk drive-mapping script with hardcoded credentials
+  ansible.windows.win_copy:
+    dest: '{{ tenenbaum_it_share_path }}\{{ tenenbaum_leaked_script }}'
+    content: |
+      @echo off
+      REM Helpdesk - map shared drives for new hires
+      REM TODO: remove the hardcoded account before go-live
+      net use H: \\DC01\{{ tenenbaum_it_share_name }} /user:ROYAL\{{ tenenbaum_leaked_creds_user }} {{ (tenenbaum_users | selectattr('name', 'equalto', tenenbaum_leaked_creds_user) | first).password }} /persistent:no
+  no_log: true
+
+- name: Publish the IT share (readable by every domain user)
+  ansible.windows.win_share:
+    name: "{{ tenenbaum_it_share_name }}"
+    path: "{{ tenenbaum_it_share_path }}"
+    description: "IT scripts and installers"
+    list: true
+    read: "ROYAL\\Domain Users"
+    full: "ROYAL\\Domain Admins,ROYAL\\Helpdesk"
+    state: present
+
+# --- Scenario: the trophy the attacker exfiltrates from DC01 ------------------
+- name: Trophy folder
+  ansible.windows.win_file:
+    path: "{{ tenenbaum_trophy_path | win_dirname }}"
+    state: directory
+
+- name: The trophy file (fake sensitive data)
+  ansible.windows.win_copy:
+    dest: "{{ tenenbaum_trophy_path }}"
+    content: |
+      TENENBAUM HOLDINGS - CONFIDENTIAL
+      Q4 acquisition targets and board memo. Do not distribute.
+      (Lab trophy file - fake data for the FOR intrusion dataset.)

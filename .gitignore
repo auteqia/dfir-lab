@@ -8,6 +8,8 @@ evidence/*
 .ludus-env
 *.key
 memo
+*ARTIFACTS.md
+*RUNBOOK*
 
 # exe
 *.exe

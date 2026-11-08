@@ -23,3 +23,15 @@
   loop: "{{ tenenbaum_sysinternals }}"
   loop_control:
     label: "{{ item.name }}"
+
+# --- Lab conditioning: let the attacker dump LSASS -------------------------
+# Windows 11 22H2 runs LSASS as a protected process (RunAsPPL=2) by default,
+# which blocks credential dumping even as SYSTEM. Turn it off so the lab is
+# attackable. Documented in scenario/LAB-NOISE.md. Applies on next reboot
+# (the workstation role reboots for autologon, so no extra reboot here).
+- name: Disable LSASS protection (RunAsPPL) so LSASS can be dumped
+  ansible.windows.win_regedit:
+    path: HKLM:\SYSTEM\CurrentControlSet\Control\Lsa
+    name: RunAsPPL
+    data: 0
+    type: dword
